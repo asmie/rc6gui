@@ -164,7 +164,7 @@ void RC6algo::WriteHeader(System::String^ plikWyj)
 		Zapis->Write(Convert::ToByte('R'));
 		Zapis->Write(Convert::ToByte('C'));
 		// Zapisujemy sam tryb szyfrowania
-		Zapis->Write(static_cast<char>(this->cipherMode_)); // Typ szyfrowania
+		Zapis->Write(Convert::ToByte(static_cast<int>(this->cipherMode_))); // Typ szyfrowania
 
 		// Dlugosc klucza, prefiks 
 		rc6 algorytm;
