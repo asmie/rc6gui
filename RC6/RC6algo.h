@@ -36,8 +36,19 @@ public:
 	/// <param name="typ_szyfrowania"></param>
 	RC6algo(System::String^ key, int keyLength, CipherMode cipherMode);
 
-	// Szyfrowanie i deszyfrowanie
+	/// <summary>
+	/// Method creates encrypted file.
+	/// </summary>
+	/// <param name="fileIn">File to encrypt.</param>
+	/// <param name="fileOut">Encrypted filename.</param>
 	void Encrypt(System::String^ fileIn, System::String^ fileOut);
+
+	/// <summary>
+	/// Method creates plaintext file from encrypted one.
+	/// </summary>
+	/// <param name="fileIn">Encrypted file.</param>
+	/// <param name="fileOut">File to store plaintext.</param>
+	/// <returns></returns>
 	bool Decrypt(System::String^ fileIn, System::String^ fileOut);
 
 private:
