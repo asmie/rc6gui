@@ -1,45 +1,63 @@
-// Implementacja klasy opakowujacej algorytm RC6
 #include "aes_defs.h"
 
-// Stale okreslajace tryb pracy
-const unsigned char TRYB_ECB = 1;
-const unsigned char TRYB_CBC = 2;
-const unsigned char TRYB_CFB = 3;
-const unsigned char TRYB_OFB = 4;
+/// <summary>
+/// Enumeration that describes cipher mode.
+/// </summary>
+enum class CipherMode {
+	ECB = 1,
+	CBC = 2,
+	CFB = 3,
+	OFB = 4
+};
 
+/// <summary>
+/// Class that wraps raw, low-level RC6 algorithm into managed one.
+/// </summary>
 ref class RC6algo
 {
 public:
-	// Konstruktor domyslny
+	/// <summary>
+	/// Default class constructor.
+	/// </summary>
 	RC6algo();
-	// Konstruktory z parametrami
-	RC6algo(System::String^ s_klucz, int Dl_klucza);
-	RC6algo(System::String^ s_klucz, int Dl_klucza, int typ_szyfrowania);
+	
+	/// <summary>
+	/// Constructor with ability to set key and its length.
+	/// </summary>
+	/// <param name="key">Key written in plaintext</param>
+	/// <param name="keyLength">Length of the key</param>
+	RC6algo(System::String^ key, int keyLength);
+
+	/// <summary>
+	/// Constructor with ability to set key, its length and cipher mode.
+	/// </summary>
+	/// <param name="key"></param>
+	/// <param name="keyLength"></param>
+	/// <param name="typ_szyfrowania"></param>
+	RC6algo(System::String^ key, int keyLength, CipherMode cipherMode);
 
 	// Szyfrowanie i deszyfrowanie
-	void Szyfruj(System::String^ plik, System::String^ plikWyj);
-	bool Deszyfruj(System::String^ plik, System::String^ plikWyj);
+	void Encrypt(System::String^ fileIn, System::String^ fileOut);
+	bool Decrypt(System::String^ fileIn, System::String^ fileOut);
 
 private:
-	// Zmienne prywatne klasy:
-	// klucz, klucz sesyjny, wektor poczatkowy oraz tryb szyfrowania
-	array<System::Byte^>^ klucz;
-	array<System::Byte^>^ sesyjny;
+	array<System::Byte^>^ key_;
+	array<System::Byte^>^ sessionKey_;
 	array<System::Byte^>^ IV;
-	unsigned char TypSzyfrowania; 
-	unsigned char DlugoscKlucza;
+	CipherMode cipherMode_; 
+	unsigned char keyLength_;
 
-	// Metody generujace dane
-	void GenerujKluczSesyjny(void);
-	void GenerujIV(void);
+	// Methods that generate initial data
+	void GenerateSessionKey(void);
+	void GenerateIV(void);
 
-	// Metody obs³ugi nag³ówka
-	void ZapiszNaglowek(System::String^ plikWyj);
-	void WczytajNaglowek(System::String^ plik);
+	// Private methods that support RC6 header.
+	void WriteHeader(System::String^ fileOut);
+	void ReadHeader(System::String^ fileIn);
 
-	// Metody prywatne szyfrujace
-	void SzyfrujECB_CBC(System::String^ plik, System::String^ plikWyj);
-	bool DeszyfrujECB_CBC(System::String^ plik, System::String^ plikWyj);
-	void SzyfrujCFB_OFB(System::String^ plik, System::String^ plikWyj);
-	bool DeszyfrujCFB_OFB(System::String^ plik, System::String^ plikWyj);
+	// Private encrypt methods supporting ECB, CBC, CFB and OFB
+	void Encrypt_ECB_CBC(System::String^ fileIn, System::String^ fileOut);
+	bool DecryptECB_CBC(System::String^ fileIn, System::String^ fileOut);
+	void EncryptCFB_OFB(System::String^ fileIn, System::String^ fileOut);
+	bool Decrypt_CFB_OFB(System::String^ fileIn, System::String^ fileOut);
 };

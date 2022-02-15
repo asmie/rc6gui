@@ -67,11 +67,11 @@ namespace RC6 {
 			// button1
 			// 
 			this->button1->Location = System::Drawing::Point(273, 92);
-			this->button1->Margin = System::Windows::Forms::Padding(4, 4, 4, 4);
+			this->button1->Margin = System::Windows::Forms::Padding(4);
 			this->button1->Name = L"button1";
 			this->button1->Size = System::Drawing::Size(149, 33);
 			this->button1->TabIndex = 0;
-			this->button1->Text = L"Zamknij";
+			this->button1->Text = L"&Close";
 			this->button1->UseVisualStyleBackColor = true;
 			this->button1->Click += gcnew System::EventHandler(this, &aboutBox::button1_Click);
 			// 
@@ -84,9 +84,9 @@ namespace RC6 {
 			this->label1->Location = System::Drawing::Point(61, 11);
 			this->label1->Margin = System::Windows::Forms::Padding(4, 0, 4, 0);
 			this->label1->Name = L"label1";
-			this->label1->Size = System::Drawing::Size(317, 29);
+			this->label1->Size = System::Drawing::Size(287, 29);
 			this->label1->TabIndex = 1;
-			this->label1->Text = L"Szyfrator / deszyfrator RC6";
+			this->label1->Text = L"RC6 encryptor/decryptor";
 			// 
 			// label2
 			// 
@@ -94,9 +94,9 @@ namespace RC6 {
 			this->label2->Location = System::Drawing::Point(144, 60);
 			this->label2->Margin = System::Windows::Forms::Padding(4, 0, 4, 0);
 			this->label2->Name = L"label2";
-			this->label2->Size = System::Drawing::Size(134, 16);
+			this->label2->Size = System::Drawing::Size(141, 16);
 			this->label2->TabIndex = 2;
-			this->label2->Text = L"Autor: Piotr Olszewski";
+			this->label2->Text = L"Author: Piotr Olszewski";
 			this->label2->Click += gcnew System::EventHandler(this, &aboutBox::label2_Click);
 			// 
 			// aboutBox
@@ -108,10 +108,10 @@ namespace RC6 {
 			this->Controls->Add(this->label1);
 			this->Controls->Add(this->button1);
 			this->FormBorderStyle = System::Windows::Forms::FormBorderStyle::FixedSingle;
-			this->Margin = System::Windows::Forms::Padding(4, 4, 4, 4);
+			this->Margin = System::Windows::Forms::Padding(4);
 			this->MaximizeBox = false;
 			this->Name = L"aboutBox";
-			this->Text = L"O programie";
+			this->Text = L"About";
 			this->Load += gcnew System::EventHandler(this, &aboutBox::aboutBox_Load);
 			this->ResumeLayout(false);
 			this->PerformLayout();

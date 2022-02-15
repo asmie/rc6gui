@@ -1,4 +1,3 @@
-// Potrzebne naglowki
 #include "stdafx.h"
 #include "RC6algo.h"
 #include "RC6.h"
@@ -10,72 +9,72 @@ using namespace System::Text;
 // Konstruktor
 RC6algo::RC6algo()
 {
-	this->TypSzyfrowania = TRYB_ECB;
-	this->DlugoscKlucza = 32;
+	this->cipherMode_ = CipherMode::ECB;
+	this->keyLength_ = 32;
 }
 
 // Konstruktor tworzacy miejsce na klucz i ustawiajacy go
-RC6algo::RC6algo(System::String^ s_klucz, int Dl_klucza)
+RC6algo::RC6algo(System::String^ key, int keyLength)
 {
-	this->DlugoscKlucza = Dl_klucza;
-	this->klucz = gcnew array<System::Byte^>(this->DlugoscKlucza);
-	for (int i = 0; i < s_klucz->Length; i++)
-		this->klucz[i] = ::Convert::ToByte(s_klucz[i]);
-	this->TypSzyfrowania = TRYB_ECB;
+	this->keyLength_ = keyLength;
+	this->key_ = gcnew array<System::Byte^>(this->keyLength_);
+	for (int i = 0; i < key->Length; i++)
+		this->key_[i] = ::Convert::ToByte(key[i]);
+	this->cipherMode_ = CipherMode::ECB;
 }
 
 // Jak wyzej ale ustawia jeszcze wybrany przez uzytkownika 
 // tryb szyfrowania
-RC6algo::RC6algo(System::String^ s_klucz,int Dl_klucza, int typ_szyfrowania)
+RC6algo::RC6algo(System::String^ key, int keyLength, CipherMode cipherMode)
 {
-	this->DlugoscKlucza = Dl_klucza;
-	this->klucz = gcnew array<System::Byte^>(this->DlugoscKlucza);
-	for (int i = 0; i < s_klucz->Length; i++)
-		this->klucz[i] = ::Convert::ToByte(s_klucz[i]);
-	this->TypSzyfrowania = typ_szyfrowania;
+	this->keyLength_ = keyLength;
+	this->key_ = gcnew array<System::Byte^>(this->keyLength_);
+	for (int i = 0; i < key->Length; i++)
+		this->key_[i] = ::Convert::ToByte(key[i]);
+	this->cipherMode_ = cipherMode;
 }
 
 // Szyfrowanie pliku
-void RC6algo::Szyfruj(System::String^ plik, System::String^ plikWyj)
+void RC6algo::Encrypt(System::String^ plik, System::String^ plikWyj)
 {
 	// Sprawdzamy czy plik istnieje
 	::FileInfo^ fiPlik = gcnew FileInfo(plik);
 	if (!fiPlik->Exists)
 		return;
 	// Wybor typu szyfrowania
-	switch (this->TypSzyfrowania)
+	switch (this->cipherMode_)
 	{
-		case TRYB_ECB:
-		case TRYB_CBC:
-			SzyfrujECB_CBC(plik, plikWyj); break;
-		case TRYB_CFB:
-		case TRYB_OFB:
-			SzyfrujCFB_OFB(plik, plikWyj); break;
+		case CipherMode::ECB:
+		case CipherMode::CBC:
+			Encrypt_ECB_CBC(plik, plikWyj); break;
+		case CipherMode::CFB:
+		case CipherMode::OFB:
+			EncryptCFB_OFB(plik, plikWyj); break;
 
 	}
 }
 
 // Deszyforwanie pliku
-bool RC6algo::Deszyfruj(System::String^ plik, System::String^ plikWyj)
+bool RC6algo::Decrypt(System::String^ plik, System::String^ plikWyj)
 {
 	// Sprawdzamy czy plik istnieje
 	::FileInfo^ fiPlik = gcnew FileInfo(plik);
 	if (!fiPlik->Exists)
 		return false;
 	// Wybor typu deszyfrowania
-	switch (this->TypSzyfrowania)
+	switch (this->cipherMode_)
 	{
-		case TRYB_ECB:
-		case TRYB_CBC:
-			return (DeszyfrujECB_CBC(plik, plikWyj)); break;
-		case TRYB_CFB:
-		case TRYB_OFB:
-			return (DeszyfrujCFB_OFB(plik, plikWyj)); break;
+		case CipherMode::ECB:
+		case CipherMode::CBC:
+			return (DecryptECB_CBC(plik, plikWyj)); break;
+		case CipherMode::CFB:
+		case CipherMode::OFB:
+			return (Decrypt_CFB_OFB(plik, plikWyj)); break;
 	}
 }
 
 // Metoda generuje klucz sesyjny
-void RC6algo::GenerujKluczSesyjny()
+void RC6algo::GenerateSessionKey()
 {
 	// Inicjalizujemy zmienne
 	Text::StringBuilder^ builder = gcnew Text::StringBuilder();
@@ -87,7 +86,7 @@ void RC6algo::GenerujKluczSesyjny()
 	// Losujemy 32 znaki (dlugosc klucza) z przedzialu kodow
 	// ASCII 33 do 126 (a zatem sa to cyfry, litery (male i duze) oraz
 	// inne znaki alfanumeryczne
-	for(int i = 0; i < this->DlugoscKlucza; i++)
+	for(int i = 0; i < this->keyLength_; i++)
 	{
 		ch = ::Convert::ToByte(random->Next(33, 126)) ;
 		builder->Append(::Convert::ToChar(ch));
@@ -96,12 +95,12 @@ void RC6algo::GenerujKluczSesyjny()
 	System::String^ sess = builder->ToString();
 
 	// Zapisujemy go w pamieci
-	this->sesyjny = gcnew array<System::Byte^>(this->DlugoscKlucza);
-	for (int i = 0; i < this->DlugoscKlucza; i++)
-		this->sesyjny[i] = ::Convert::ToByte(sess[i]);
+	this->sessionKey_ = gcnew array<System::Byte^>(this->keyLength_);
+	for (int i = 0; i < this->keyLength_; i++)
+		this->sessionKey_[i] = ::Convert::ToByte(sess[i]);
 }
 
-void RC6algo::GenerujIV()
+void RC6algo::GenerateIV()
 {
 	Text::StringBuilder^ builder = gcnew Text::StringBuilder();
 	// Inicjalizacja generatora liczb losownych na podstawie
@@ -127,7 +126,7 @@ void RC6algo::GenerujIV()
 }
 
 // Metoda prywatna zapisujaca naglowek pliku.
-void RC6algo::ZapiszNaglowek(System::String^ plikWyj)
+void RC6algo::WriteHeader(System::String^ plikWyj)
 {
 	::BinaryWriter^ Zapis = gcnew BinaryWriter( File::Open( plikWyj, FileMode::Create ) );
 	try
@@ -135,7 +134,7 @@ void RC6algo::ZapiszNaglowek(System::String^ plikWyj)
 	
 	   // Obliczamy dlugosc naglowka - sa to 44 bajty w standardzie + musimy do nich
 	   // dodac nasza dlugosc klucza - w ten sposob otrzymamy calkowita dlugosc naglowka.
-		unsigned char dl = 44 + this->DlugoscKlucza;
+		unsigned char dl = 44 + this->keyLength_;
 		Zapis->Write(dl);       // Zapisujemy pole dlugosci naglowka
 
 		dl = 8;                    // Jest to dlugosc sygnatury pliku
@@ -165,7 +164,7 @@ void RC6algo::ZapiszNaglowek(System::String^ plikWyj)
 		Zapis->Write(Convert::ToByte('R'));
 		Zapis->Write(Convert::ToByte('C'));
 		// Zapisujemy sam tryb szyfrowania
-		Zapis->Write(this->TypSzyfrowania); // Typ szyfrowania
+		Zapis->Write(static_cast<char>(this->cipherMode_)); // Typ szyfrowania
 
 		// Dlugosc klucza, prefiks 
 		rc6 algorytm;
@@ -173,7 +172,7 @@ void RC6algo::ZapiszNaglowek(System::String^ plikWyj)
 		// prefiks, ktory znow nam do niczego sie nie przyda :-) - wiec jest to
 		// RCRC6 - stad tez 5 bajtow) i do tej piatki dodajemy dlugosc klucza
 		// ktora moze byc jak wiadomo rozna.
-		dl = 5 + this->DlugoscKlucza;
+		dl = 5 + this->keyLength_;
 		Zapis->Write(dl);
 		Zapis->Write(Convert::ToByte('R'));
 		Zapis->Write(Convert::ToByte('C'));
@@ -187,22 +186,22 @@ void RC6algo::ZapiszNaglowek(System::String^ plikWyj)
 		u1byte klucz_bufor[32];
 
 		// Konwertujemy klucz do formatu wymaganego przez RC6
-		for (int i = 0; i < this->DlugoscKlucza; i++)
-			klucz_bufor[i] = Convert::ToByte(this->klucz[i]);
-		algorytm.set_key(klucz_bufor, this->DlugoscKlucza, dir_flag::both);
+		for (int i = 0; i < this->keyLength_; i++)
+			klucz_bufor[i] = Convert::ToByte(this->key_[i]);
+		algorytm.set_key(klucz_bufor, this->keyLength_, dir_flag::both);
 
 		// Szyfrujemy klucz sesyjny i zapisujemy go w pliku
 		for (int i = 0; i < 16; i++)
-			bufor_in[i] = Convert::ToByte(this->sesyjny[i]);
+			bufor_in[i] = Convert::ToByte(this->sessionKey_[i]);
 		algorytm.encrypt(bufor_in, bufor_out);
 		for (int j = 0; j < 16; j++)
 			Zapis->Write(bufor_out[j]);
 		// Jezeli klucz jest 32 bajtowy to musimy oczywiscie dopisac pozostale
 		// 16 bajtow
-       if (this->DlugoscKlucza == 32)
+       if (this->keyLength_ == 32)
 		{
 			for (int i = 16; i < 32; i++)
-				bufor_in[i-16] = Convert::ToByte(this->sesyjny[i]);
+				bufor_in[i-16] = Convert::ToByte(this->sessionKey_[i]);
 			algorytm.encrypt(bufor_in, bufor_out);
 			for (int j = 0; j < 16; j++)
 				Zapis->Write(bufor_out[j]);
@@ -234,7 +233,7 @@ void RC6algo::ZapiszNaglowek(System::String^ plikWyj)
 
 // Metoda prywatna, odczytujaca naglowek i ustawiajaca 
 // odpowiednie pola w klasie
-void RC6algo::WczytajNaglowek(System::String^ plik)
+void RC6algo::ReadHeader(System::String^ plik)
 {
 	try
 	{
@@ -247,7 +246,7 @@ void RC6algo::WczytajNaglowek(System::String^ plik)
 			buff = Czytnik->ReadByte();
 		// Odczytujemy typ szyfrowania, czyli 16 bajtw naszego naglowka. To pierwszy bajt
 		// ktory nas interesuje w pliku wiec wczytujemy go do opdowiedniej zmiennej.
-		this->TypSzyfrowania = Czytnik->ReadByte();
+		this->cipherMode_ = static_cast<CipherMode> (Czytnik->ReadByte());
 		// Wczytujemy teraz dlugosc prefiksu i klucza
 		buff = Czytnik->ReadByte();
 		// Konwertujemy wczytany bajt na liczbe.
@@ -256,8 +255,8 @@ void RC6algo::WczytajNaglowek(System::String^ plik)
 		// dlugosc rowna dlugosci klucza z dodana dlugoscia prefiksu - prefiks to 5 bajtow
 		// wiec po odjeciu piatki otrzymamy dlugosc klucza, jakim zaszyfrowano plik.
 		dl -= 5;
-		this->DlugoscKlucza = dl;
-		this->sesyjny = gcnew array<System::Byte^>(dl);
+		this->keyLength_ = dl;
+		this->sessionKey_ = gcnew array<System::Byte^>(dl);
 
 		u1byte bufor_in[16];
 		u1byte bufor_out[16];
@@ -266,9 +265,9 @@ void RC6algo::WczytajNaglowek(System::String^ plik)
 		
 		// Konwertujemy klucz do postaci akceptowanej przez RC6
 		// i ustawiamy go
-		for (int i = 0; i < this->DlugoscKlucza; i++)
-			klucz_bufor[i] = Convert::ToByte(this->klucz[i]);
-		algorytm.set_key(klucz_bufor, this->DlugoscKlucza, dir_flag::both);
+		for (int i = 0; i < this->keyLength_; i++)
+			klucz_bufor[i] = Convert::ToByte(this->key_[i]);
+		algorytm.set_key(klucz_bufor, this->keyLength_, dir_flag::both);
 		
 		// Czytamy 5 bajtow prefiksu klucza. Jako ze go nie uzywamy to po prostu
 		// pomijamy te dane bez obrobki. Prefiks nie jest nam potrzebny.
@@ -282,16 +281,16 @@ void RC6algo::WczytajNaglowek(System::String^ plik)
 			bufor_in[i] = Czytnik->ReadByte();
 		algorytm.decrypt(bufor_in, bufor_out);
 		for (int j = 0; j < 16; j++)
-			this->sesyjny[j] = bufor_out[j];
+			this->sessionKey_[j] = bufor_out[j];
 		// Jezeli klucz jest dluzszy niz 16 bajtow to musimy wczytac druga 
 		// czesc klucza i ustawic jako sesyjny.
-		if (this->DlugoscKlucza > 16)
+		if (this->keyLength_ > 16)
 		{
 			for (int i = 0; i < 16; i++)
 				bufor_in[i] = Czytnik->ReadByte();
 			algorytm.decrypt(bufor_in, bufor_out);
-			for (int j = 16; j < this->DlugoscKlucza; j++)
-				this->sesyjny[j] = bufor_out[j-16];
+			for (int j = 16; j < this->keyLength_; j++)
+				this->sessionKey_[j] = bufor_out[j-16];
 		}
 		
 		// Czytamy 6 bajtow - czyli prefiks wektora IV. Ponownie, jak kazdy prefiks
@@ -301,7 +300,7 @@ void RC6algo::WczytajNaglowek(System::String^ plik)
 			buff = Czytnik->ReadByte();
 		// Zczytujemy wektor poczatkowy - najpierw generujemy wektorek po to aby
 		// uzyskac miejsce w pamieci na wczytanie tego wlasciwego.
-		this->GenerujIV();
+		this->GenerateIV();
 		// Czytamy 16 bajtow pliku, ktore zawieraja nasz wektor IV.
 		for (int i = 0; i < 16; i++)
 			this->IV[i] = Czytnik->ReadByte();
@@ -322,15 +321,15 @@ void RC6algo::WczytajNaglowek(System::String^ plik)
 // Metoda prywatna szyfrujaca w trybach ECB lub CBC
 // Uzyta zostala jedna metoda, ze wzgledu na niewielkie roznice
 // implementacyjne w obu tych metodach.
-void RC6algo::SzyfrujECB_CBC(System::String^ plik, System::String^ plikWyj)
+void RC6algo::Encrypt_ECB_CBC(System::String^ plik, System::String^ plikWyj)
 {
 	try
 	{
 		// Generujemy klucz sesyjny i wektor poczatkowy (uzyteczny tylko w CBC)
-		this->GenerujKluczSesyjny();
-		this->GenerujIV();
+		this->GenerateSessionKey();
+		this->GenerateIV();
 
-		this->ZapiszNaglowek(plikWyj);
+		this->WriteHeader(plikWyj);
 
 		// Pobieramy informacje o pliku
 		// Otwieramy oba pliki (wejsciowy i wyjsciowy) w trybie
@@ -352,9 +351,9 @@ void RC6algo::SzyfrujECB_CBC(System::String^ plik, System::String^ plikWyj)
 		u1byte klucz_bufor[32];
 
 		// Ustawiamy jako klucz szyfrujacy klucz sesyjny
-		for (int i = 0; i < this->DlugoscKlucza; i++)
-			klucz_bufor[i] = Convert::ToByte(this->sesyjny[i]);
-		algorytm.set_key(klucz_bufor, this->DlugoscKlucza, dir_flag::both);
+		for (int i = 0; i < this->keyLength_; i++)
+			klucz_bufor[i] = Convert::ToByte(this->sessionKey_[i]);
+		algorytm.set_key(klucz_bufor, this->keyLength_, dir_flag::both);
 
 		// Szyfrujemy caly plik w blokach po 16 bajtow (rozmiar
 		// bloku dla RC6).
@@ -367,7 +366,7 @@ void RC6algo::SzyfrujECB_CBC(System::String^ plik, System::String^ plikWyj)
 				// Jezeli jest to tryb CBC od razu
 				// xorujemy z zaszyfrowana wartoscia poprzedniego
 				// bloku
-				if (this->TypSzyfrowania == TRYB_CBC)
+				if (this->cipherMode_ == CipherMode::CBC)
 					bufor_in[j] ^= Convert::ToByte(this->IV[j]);
 			}
 			// Szyfrujemy obecny blok
@@ -378,7 +377,7 @@ void RC6algo::SzyfrujECB_CBC(System::String^ plik, System::String^ plikWyj)
 				Zapis->Write(bufor_out[j]);
 				// Jesli CBC to zapamietujemy obecny szyfrogram
 				// do pozniejszego xorowania
-				if (this->TypSzyfrowania == TRYB_CBC)
+				if (this->cipherMode_ == CipherMode::CBC)
 					this->IV[j] = bufor_out[j];
 			}
 		}
@@ -386,7 +385,7 @@ void RC6algo::SzyfrujECB_CBC(System::String^ plik, System::String^ plikWyj)
 		for (int i = 0; i < (dlugosc - (int)(dlugosc / 16) * 16); i++)
 		{
 			bufor_in[i] = Czytnik->ReadByte();
-			if (this->TypSzyfrowania == TRYB_CBC)
+			if (this->cipherMode_ == CipherMode::CBC)
 				bufor_in[i] ^= Convert::ToByte(this->IV[i]);
 		}
 		// Jezeli dlugosc ostatniego bloku w pliku nie wynosi
@@ -395,7 +394,7 @@ void RC6algo::SzyfrujECB_CBC(System::String^ plik, System::String^ plikWyj)
 		{
 			bufor_in[j] = 0;
 			// Jesli CBC to od razu xorujemy
-			if (this->TypSzyfrowania == TRYB_CBC)
+			if (this->cipherMode_ == CipherMode::CBC)
 				bufor_in[j] ^= Convert::ToByte(this->IV[j]);
 		}
 		// Szyfrujemy ostatni blok
@@ -421,32 +420,32 @@ void RC6algo::SzyfrujECB_CBC(System::String^ plik, System::String^ plikWyj)
 // Metoda prywatna deszyfrujaca w trybach ECB lub CBC
 // Uzyta zostala jedna metoda, ze wzgledu na niewielkie roznice
 // implementacyjne w obu tych metodach.
-bool RC6algo::DeszyfrujECB_CBC(System::String^ plik, System::String^ plikWyj)
+bool RC6algo::DecryptECB_CBC(System::String^ plik, System::String^ plikWyj)
 {
 
 	try
 	{
-		this->WczytajNaglowek(plik);
+		this->ReadHeader(plik);
 			// Otwieramy pliki
 		::FileInfo^ fiPlik = gcnew FileInfo(plik);
 		::BinaryReader^ Czytnik = gcnew BinaryReader( File::Open(plik, FileMode::Open));
 		::BinaryWriter^ Zapis = gcnew BinaryWriter( File::Open( plikWyj, FileMode::Create ) );
 
 		// Obliczamy dlugosc bloku danych (rozmiar pliku - naglowek)
-		int dlugosc = fiPlik->Length - (52 + this->DlugoscKlucza);
+		int dlugosc = fiPlik->Length - (52 + this->keyLength_);
 		// Pomijamy juz wczytany naglowek
 		unsigned char buff;
-		for (int i = 0; i < 44+this->DlugoscKlucza; i++)
+		for (int i = 0; i < 44+this->keyLength_; i++)
 			buff = Czytnik->ReadByte();
 
 		// Jezeli nie zgadza sie z tym wybranym przez uzytkownika
 		// to zapisujemy rozpoznany tryb i wracamy do wyboru
 		// metody szyfrujacej
-		if (this->TypSzyfrowania != TRYB_CBC && this->TypSzyfrowania != TRYB_ECB)
+		if (this->cipherMode_ != CipherMode::CBC && this->cipherMode_ != CipherMode::ECB)
 		{
 			Czytnik->Close();
 			Zapis->Close();
-			this->Deszyfruj(plik, plikWyj);
+			this->Decrypt(plik, plikWyj);
 			return true;
 		}
 
@@ -461,9 +460,9 @@ bool RC6algo::DeszyfrujECB_CBC(System::String^ plik, System::String^ plikWyj)
 		__int64 dlugosc_orig = Czytnik->ReadInt64();
 
 		// Konwertujemy klucz sesyjny i ustawiamy go do deszyfracji
-		for (int i = 0; i < this->DlugoscKlucza; i++)
-			klucz_bufor[i] = Convert::ToByte(this->sesyjny[i]);
-		algorytm.set_key(klucz_bufor, this->DlugoscKlucza, dir_flag::both);
+		for (int i = 0; i < this->keyLength_; i++)
+			klucz_bufor[i] = Convert::ToByte(this->sessionKey_[i]);
+		algorytm.set_key(klucz_bufor, this->keyLength_, dir_flag::both);
 
 		// Deszyfrujemy plik w blokach o dlugosc 16
 		for (int i = 0; i < (int)(dlugosc / 16)-1; i++)
@@ -478,7 +477,7 @@ bool RC6algo::DeszyfrujECB_CBC(System::String^ plik, System::String^ plikWyj)
 				// Jesli jest to tryb CBC to wykonujemy xora
 				// i zapamietujemy obecny szyfrogram jako kolejny
 				// do operacji xor
-				if (this->TypSzyfrowania == TRYB_CBC)
+				if (this->cipherMode_ == CipherMode::CBC)
 				{
 					bufor_out[j] ^= Convert::ToByte(this->IV[j]);
 					this->IV[j] = bufor_in[j];
@@ -497,7 +496,7 @@ bool RC6algo::DeszyfrujECB_CBC(System::String^ plik, System::String^ plikWyj)
 		for (int j = 0; j < (int)dlugosc_orig - (int)(dlugosc_orig / 16) * 16; j++)
 		{
 				// Oczywiscie w przypadku CBC jeszcze xorujemy
-				if (this->TypSzyfrowania == TRYB_CBC)
+				if (this->cipherMode_ == CipherMode::CBC)
 					bufor_out[j] ^= Convert::ToByte(this->IV[j]);
 				Zapis->Write(bufor_out[j]);
 		}
@@ -520,15 +519,15 @@ bool RC6algo::DeszyfrujECB_CBC(System::String^ plik, System::String^ plikWyj)
 // Metoda prywatna szyfrujaca w trybach CFB lub OFB
 // Uzyta zostala jedna metoda, ze wzgledu na niewielkie roznice
 // implementacyjne w obu tych metodach.
-void RC6algo::SzyfrujCFB_OFB(System::String^ plik, System::String^ plikWyj)
+void RC6algo::EncryptCFB_OFB(System::String^ plik, System::String^ plikWyj)
 {
 	try
 	{
 		// Generujemy potrzebne dane
-		this->GenerujKluczSesyjny();
-		this->GenerujIV();
+		this->GenerateSessionKey();
+		this->GenerateIV();
 
-		this->ZapiszNaglowek(plikWyj);
+		this->WriteHeader(plikWyj);
 
 		// Otwieramy pliki
 		::FileInfo^ fiPlik = gcnew FileInfo(plik);
@@ -546,9 +545,9 @@ void RC6algo::SzyfrujCFB_OFB(System::String^ plik, System::String^ plikWyj)
 		u1byte klucz_bufor[32];
 
 		// Ustawiamy klucz sesyjny jako nasz klucz szyfrujacy
-		for (int i = 0; i < this->DlugoscKlucza; i++)
-			klucz_bufor[i] = Convert::ToByte(this->sesyjny[i]);
-		algorytm.set_key(klucz_bufor, this->DlugoscKlucza, dir_flag::both);
+		for (int i = 0; i < this->keyLength_; i++)
+			klucz_bufor[i] = Convert::ToByte(this->sessionKey_[i]);
+		algorytm.set_key(klucz_bufor, this->keyLength_, dir_flag::both);
 
 		// Szyfrujemy dane
 		for (int i = 0; i < (int)(dlugosc / 16); i++)
@@ -573,7 +572,7 @@ void RC6algo::SzyfrujCFB_OFB(System::String^ plik, System::String^ plikWyj)
 				Zapis->Write(bufor_in[j]);
 				// W trybie CFB zaszyfrowane dane sa poddawane 
 				// dalszej obrobce (tj. szyfrowania i xorowaniu)
-				if ( this->TypSzyfrowania == TRYB_CFB)
+				if ( this->cipherMode_ == CipherMode::CFB)
 					this->IV[j] = bufor_in[j];
 				// W trybie OFB, szyfrowac ponownie bedziemy 
 				// juz zaszyfrowany wektor poczatkowy
@@ -613,11 +612,11 @@ void RC6algo::SzyfrujCFB_OFB(System::String^ plik, System::String^ plikWyj)
 // Metoda prywatna deszyfrujaca w trybach CFB lub OFB
 // Uzyta zostala jedna metoda, ze wzgledu na niewielkie roznice
 // implementacyjne w obu tych metodach.
-bool RC6algo::DeszyfrujCFB_OFB(System::String^ plik, System::String^ plikWyj)
+bool RC6algo::Decrypt_CFB_OFB(System::String^ plik, System::String^ plikWyj)
 {
 	try
 	{
-		this->WczytajNaglowek(plik);
+		this->ReadHeader(plik);
 
 		// Otwieramy pliki
 		::FileInfo^ fiPlik = gcnew FileInfo(plik);
@@ -625,35 +624,32 @@ bool RC6algo::DeszyfrujCFB_OFB(System::String^ plik, System::String^ plikWyj)
 		::BinaryWriter^ Zapis = gcnew BinaryWriter( File::Open( plikWyj, FileMode::Create ) );
 
 		// Liczymy dlugosc pliku
-		int dlugosc = fiPlik->Length - (52 + this->DlugoscKlucza);
+		int dlugosc = fiPlik->Length - (52 + this->keyLength_);
 		// Pomijamy juz wczytany naglowek
 		unsigned char buff;
-		for (int i = 0; i < 44+this->DlugoscKlucza; i++)
+		for (int i = 0; i < 44+this->keyLength_; i++)
 			buff = Czytnik->ReadByte();
 		// Jesli pobrany jest inny niz ten ustawiony przez 
 		// uzytkownika to wracamy do wyboru funkcji deszyfrujacej
-		if (this->TypSzyfrowania != TRYB_CFB && this->TypSzyfrowania != TRYB_OFB)
+		if (this->cipherMode_ != CipherMode::CFB && this->cipherMode_ != CipherMode::OFB)
 		{
 			Czytnik->Close();
 			Zapis->Close();
-			return this->Deszyfruj(plik, plikWyj);;
+			return this->Decrypt(plik, plikWyj);;
 		}
-
 		
 		u1byte bufor_in[16];
 		u1byte bufor_out[16];
 		rc6 algorytm;
 		u1byte klucz_bufor[32];
 
-		
-
 		// Czytamy oryginalna dlugosc pliku
 		__int64 dlugosc_orig = Czytnik->ReadInt64();
 
 		// Konwertujemy i ustawiamy klucz sesyjny
-		for (int i = 0; i < this->DlugoscKlucza; i++)
-			klucz_bufor[i] = Convert::ToByte(this->sesyjny[i]);
-		algorytm.set_key(klucz_bufor, this->DlugoscKlucza, dir_flag::both);
+		for (int i = 0; i < this->keyLength_; i++)
+			klucz_bufor[i] = Convert::ToByte(this->sessionKey_[i]);
+		algorytm.set_key(klucz_bufor, this->keyLength_, dir_flag::both);
 
 		// Deszyfrujemy plik
 		for (int i = 0; i < (int)(dlugosc / 16)-1; i++)
@@ -669,7 +665,7 @@ bool RC6algo::DeszyfrujCFB_OFB(System::String^ plik, System::String^ plikWyj)
 				bufor_in[j] = Czytnik->ReadByte();
 				// W trybie CFB nastepnym ciagiem strumienia szyfrujacego
 				// jest wlasnie wczytany szyfrogram
-				if (this->TypSzyfrowania == TRYB_CFB)
+				if (this->cipherMode_ == CipherMode::CFB)
 					this->IV[j] = bufor_in[j];
 				else
 				// W trybie OFB jest nim zaszyfrowany ponownie wektor IV
